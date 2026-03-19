@@ -4,6 +4,7 @@ struct ContentView: View {
     @State private var isAccelerating = false
     @State private var joystickX: Double = 0
     @State private var joystickY: Double = 0
+    @State private var hasPlacedCar = false
 
     private var isTurningLeft: Bool {
         joystickX < -0.3
@@ -19,50 +20,57 @@ struct ContentView: View {
                 isAccelerating: $isAccelerating,
                 isBraking: .constant(false),
                 isTurningLeft: .constant(isTurningLeft),
-                isTurningRight: .constant(isTurningRight)
+                isTurningRight: .constant(isTurningRight),
+                hasPlacedCar: $hasPlacedCar
             )
             .edgesIgnoringSafeArea(.all)
 
             VStack {
-                Text("B5用紙をカメラに向けてください")
-                    .font(.headline)
-                    .padding()
-                    .background(Color.black.opacity(0.7))
-                    .foregroundColor(.white)
-                    .cornerRadius(10)
+                // ステータステキスト
+                if !hasPlacedCar {
+                    Text("平面を検知中…タップで車を配置")
+                        .font(.headline)
+                        .padding()
+                        .background(Color.black.opacity(0.7))
+                        .foregroundColor(.white)
+                        .cornerRadius(10)
+                }
                 Spacer()
 
-                HStack(alignment: .bottom, spacing: 40) {
-                    VStack {
-                        Text("移動")
-                            .font(.caption)
-                            .foregroundColor(.white)
-                        Joystick(xAxis: $joystickX, yAxis: $joystickY)
-                    }
-
-                    Spacer()
-
-                    VStack {
-                        Text("アクセル")
-                            .font(.caption)
-                            .foregroundColor(.white)
-                        Button(action: {}) {
-                            Text("A")
-                                .font(.system(size: 40, weight: .bold))
+                // 操作パネル（車配置後のみ表示）
+                if hasPlacedCar {
+                    HStack(alignment: .bottom, spacing: 40) {
+                        VStack {
+                            Text("移動")
+                                .font(.caption)
                                 .foregroundColor(.white)
-                                .frame(width: 120, height: 120)
-                                .background(isAccelerating ? Color.green : Color.green.opacity(0.6))
-                                .cornerRadius(60)
+                            Joystick(xAxis: $joystickX, yAxis: $joystickY)
                         }
-                        .simultaneousGesture(
-                            DragGesture(minimumDistance: 0)
-                                .onChanged { _ in isAccelerating = true }
-                                .onEnded { _ in isAccelerating = false }
-                        )
+
+                        Spacer()
+
+                        VStack {
+                            Text("アクセル")
+                                .font(.caption)
+                                .foregroundColor(.white)
+                            Button(action: {}) {
+                                Text("A")
+                                    .font(.system(size: 40, weight: .bold))
+                                    .foregroundColor(.white)
+                                    .frame(width: 120, height: 120)
+                                    .background(isAccelerating ? Color.green : Color.green.opacity(0.6))
+                                    .cornerRadius(60)
+                            }
+                            .simultaneousGesture(
+                                DragGesture(minimumDistance: 0)
+                                    .onChanged { _ in isAccelerating = true }
+                                    .onEnded { _ in isAccelerating = false }
+                            )
+                        }
                     }
+                    .padding(.horizontal, 30)
+                    .padding(.bottom, 50)
                 }
-                .padding(.horizontal, 30)
-                .padding(.bottom, 50)
             }
         }
     }

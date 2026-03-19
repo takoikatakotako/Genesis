@@ -7,27 +7,24 @@ struct ARViewContainer: UIViewRepresentable {
     @Binding var isBraking: Bool
     @Binding var isTurningLeft: Bool
     @Binding var isTurningRight: Bool
+    @Binding var hasPlacedCar: Bool
 
     func makeUIView(context: Context) -> ARView {
         let arView = ARView(frame: .zero)
 
-        // AR設定
+        // AR設定（水平面検知）
         let config = ARWorldTrackingConfiguration()
-
-        // AR Reference Imageを読み込み
-        guard let referenceImages = ARReferenceImage.referenceImages(inGroupNamed: "AR Resources", bundle: nil) else {
-            print("❌ AR Reference Imageが見つかりません")
-            return arView
-        }
-
-        config.detectionImages = referenceImages
-        config.maximumNumberOfTrackedImages = 1
+        config.planeDetection = [.horizontal]
 
         arView.session.run(config)
 
         // デリゲート設定
         context.coordinator.arView = arView
         arView.session.delegate = context.coordinator
+
+        // タップジェスチャーで車を配置
+        let tapGesture = UITapGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.handleTap(_:)))
+        arView.addGestureRecognizer(tapGesture)
 
         return arView
     }
@@ -37,6 +34,7 @@ struct ARViewContainer: UIViewRepresentable {
         context.coordinator.isBraking = isBraking
         context.coordinator.isTurningLeft = isTurningLeft
         context.coordinator.isTurningRight = isTurningRight
+        context.coordinator.hasPlacedCarBinding = $hasPlacedCar
     }
 
     func makeCoordinator() -> Coordinator {
@@ -45,13 +43,16 @@ struct ARViewContainer: UIViewRepresentable {
 
     class Coordinator: NSObject, ARSessionDelegate {
         weak var arView: ARView?
+        var hasPlacedCarBinding: Binding<Bool>?
         private var hasPlacedCar = false
         private var carEntity: Entity?
+        private var carAnchor: AnchorEntity?
         private var currentSpeed: Float = 0.0
         private var currentRotation: Float = 0.0
         // モデルの向き補正（X軸で-90度回転して起こす + Y軸180度でモデルの前後反転）
         private let modelUpCorrection = simd_quatf(angle: .pi, axis: SIMD3<Float>(0, 1, 0)) * simd_quatf(angle: -.pi / 2, axis: SIMD3<Float>(1, 0, 0))
         private var updateTimer: Timer?
+        private var planeEntities: [ARAnchor: (AnchorEntity, ModelEntity)] = [:]
 
         var isAccelerating: Bool = false {
             didSet { updateSpeed() }
@@ -71,19 +72,76 @@ struct ARViewContainer: UIViewRepresentable {
             print("❌ ARSession エラー: \(error.localizedDescription)")
         }
 
+        // 検知した平面をハイライト表示
         func session(_ session: ARSession, didAdd anchors: [ARAnchor]) {
-            guard !hasPlacedCar else { return }
+            guard !hasPlacedCar, let arView = arView else { return }
 
             for anchor in anchors {
-                if let imageAnchor = anchor as? ARImageAnchor {
-                    placeCar(on: imageAnchor)
-                    hasPlacedCar = true
-                    break
-                }
+                guard let planeAnchor = anchor as? ARPlaneAnchor,
+                      planeAnchor.alignment == .horizontal else { continue }
+
+                let extent = planeAnchor.extent
+                let mesh = MeshResource.generatePlane(width: extent.x, depth: extent.z)
+                var material = SimpleMaterial()
+                material.color = .init(tint: UIColor(red: 0.3, green: 0.7, blue: 1.0, alpha: 0.3))
+                let planeEntity = ModelEntity(mesh: mesh, materials: [material])
+
+                let anchorEntity = AnchorEntity(anchor: planeAnchor)
+                anchorEntity.addChild(planeEntity)
+                arView.scene.addAnchor(anchorEntity)
+
+                planeEntities[anchor] = (anchorEntity, planeEntity)
             }
         }
 
-        private func placeCar(on imageAnchor: ARImageAnchor) {
+        // 平面サイズの更新に追従
+        func session(_ session: ARSession, didUpdate anchors: [ARAnchor]) {
+            guard !hasPlacedCar else { return }
+
+            for anchor in anchors {
+                guard let planeAnchor = anchor as? ARPlaneAnchor,
+                      let (_, planeEntity) = planeEntities[anchor] else { continue }
+
+                let extent = planeAnchor.extent
+                let newMesh = MeshResource.generatePlane(width: extent.x, depth: extent.z)
+                planeEntity.model?.mesh = newMesh
+            }
+        }
+
+        // 削除された平面のハイライトを除去
+        func session(_ session: ARSession, didRemove anchors: [ARAnchor]) {
+            for anchor in anchors {
+                guard let (anchorEntity, _) = planeEntities.removeValue(forKey: anchor) else { continue }
+                anchorEntity.removeFromParent()
+            }
+        }
+
+        // 全てのハイライトを削除
+        private func removeAllPlaneHighlights() {
+            for (_, (anchorEntity, _)) in planeEntities {
+                anchorEntity.removeFromParent()
+            }
+            planeEntities.removeAll()
+        }
+
+        @objc func handleTap(_ recognizer: UITapGestureRecognizer) {
+            guard !hasPlacedCar, let arView = arView else { return }
+
+            let location = recognizer.location(in: arView)
+
+            // レイキャストで平面上の位置を取得
+            let results = arView.raycast(from: location, allowing: .estimatedPlane, alignment: .horizontal)
+            guard let result = results.first else { return }
+
+            placeCar(at: result.worldTransform)
+            removeAllPlaneHighlights()
+            hasPlacedCar = true
+            DispatchQueue.main.async {
+                self.hasPlacedCarBinding?.wrappedValue = true
+            }
+        }
+
+        private func placeCar(at worldTransform: simd_float4x4) {
             guard let arView = arView else { return }
 
             guard let url = Bundle.main.url(forResource: "miniCooperbake", withExtension: "usdz") else {
@@ -94,7 +152,7 @@ struct ARViewContainer: UIViewRepresentable {
             do {
                 let entity = try Entity.load(contentsOf: url)
 
-                // B5用紙サイズに収まるようスケーリング
+                // スケーリング
                 let bounds = entity.visualBounds(relativeTo: nil)
                 let modelSize = bounds.extents
                 let maxDimension = max(modelSize.x, modelSize.z)
@@ -102,12 +160,14 @@ struct ARViewContainer: UIViewRepresentable {
                 let scaleFactor = targetSize / maxDimension
                 entity.scale = SIMD3<Float>(repeating: scaleFactor)
 
-                let anchorEntity = AnchorEntity(anchor: imageAnchor)
+                // タップ位置にアンカーを作成
+                let anchorEntity = AnchorEntity(world: worldTransform)
 
                 entity.position = SIMD3<Float>(0, 0, 0)
                 entity.orientation = modelUpCorrection
 
                 self.carEntity = entity
+                self.carAnchor = anchorEntity
                 anchorEntity.addChild(entity)
                 arView.scene.addAnchor(anchorEntity)
 
