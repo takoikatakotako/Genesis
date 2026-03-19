@@ -27,6 +27,16 @@ class AppSettings: ObservableObject {
         didSet { UserDefaults.standard.set(acceleration, forKey: "acceleration") }
     }
 
+    /// 選択中の車モデルID
+    @Published var selectedCarId: String {
+        didSet { UserDefaults.standard.set(selectedCarId, forKey: "selectedCarId") }
+    }
+
+    /// 選択中の車モデル
+    var selectedCar: CarModel {
+        CarModel.all.first { $0.id == selectedCarId } ?? CarModel.all[0]
+    }
+
     private init() {
         let defaults = UserDefaults.standard
 
@@ -34,12 +44,14 @@ class AppSettings: ObservableObject {
         defaults.register(defaults: [
             "steeringSensitivity": 0.05,
             "maxSpeed": 0.2,
-            "acceleration": 0.005
+            "acceleration": 0.005,
+            "selectedCarId": "mini_cooper"
         ])
 
         self.steeringSensitivity = defaults.double(forKey: "steeringSensitivity")
         self.maxSpeed = defaults.double(forKey: "maxSpeed")
         self.acceleration = defaults.double(forKey: "acceleration")
+        self.selectedCarId = defaults.string(forKey: "selectedCarId") ?? "mini_cooper"
     }
 
     /// デフォルト値にリセット
@@ -47,5 +59,6 @@ class AppSettings: ObservableObject {
         steeringSensitivity = 0.05
         maxSpeed = 0.2
         acceleration = 0.005
+        selectedCarId = "mini_cooper"
     }
 }

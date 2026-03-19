@@ -14,6 +14,19 @@ struct SettingsView: View {
     var body: some View {
         NavigationStack {
             Form {
+                Section("車") {
+                    NavigationLink {
+                        CarSelectionView(selectedCarId: $settings.selectedCarId)
+                    } label: {
+                        HStack {
+                            Text("モデル")
+                            Spacer()
+                            Text("\(settings.selectedCar.emoji) \(settings.selectedCar.name)")
+                                .foregroundColor(.secondary)
+                        }
+                    }
+                }
+
                 Section("操作") {
                     VStack(alignment: .leading) {
                         HStack {
