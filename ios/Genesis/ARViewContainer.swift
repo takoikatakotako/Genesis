@@ -62,10 +62,10 @@ struct ARViewContainer: UIViewRepresentable {
         var isTurningLeft: Bool = false
         var isTurningRight: Bool = false
 
-        private let maxSpeed: Float = 0.2
-        private let acceleration: Float = 0.005
-        private let deceleration: Float = 0.02
-        private let rotationSpeed: Float = 0.05
+        private var maxSpeed: Float { Float(AppSettings.shared.maxSpeed) }
+        private var acceleration: Float { Float(AppSettings.shared.acceleration) }
+        private var deceleration: Float { acceleration * 4 }
+        private var rotationSpeed: Float { Float(AppSettings.shared.steeringSensitivity) }
 
         func session(_ session: ARSession, didFailWithError error: Error) {
             print("❌ ARSession エラー: \(error.localizedDescription)")
