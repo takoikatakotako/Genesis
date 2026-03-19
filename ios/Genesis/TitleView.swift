@@ -9,6 +9,7 @@ import SwiftUI
 
 struct TitleView: View {
     @State private var isShowingAR = false
+    @State private var isShowingSettings = false
     @State private var titleOpacity: Double = 0
     @State private var buttonOpacity: Double = 0
 
@@ -60,8 +61,23 @@ struct TitleView: View {
                 }
                 .opacity(buttonOpacity)
 
+                // 設定ボタン
+                Button {
+                    isShowingSettings = true
+                } label: {
+                    Image(systemName: "gearshape")
+                        .font(.system(size: 20))
+                        .foregroundColor(.white.opacity(0.6))
+                        .frame(width: 48, height: 48)
+                        .background(
+                            Circle()
+                                .stroke(Color.white.opacity(0.3), lineWidth: 1)
+                        )
+                }
+                .opacity(buttonOpacity)
+
                 Spacer()
-                    .frame(height: 80)
+                    .frame(height: 40)
             }
         }
         .onAppear {
@@ -74,6 +90,9 @@ struct TitleView: View {
         }
         .fullScreenCover(isPresented: $isShowingAR) {
             ContentView()
+        }
+        .sheet(isPresented: $isShowingSettings) {
+            SettingsView()
         }
     }
 }
