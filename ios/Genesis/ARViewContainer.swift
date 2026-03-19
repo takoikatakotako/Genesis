@@ -8,6 +8,7 @@ struct ARViewContainer: UIViewRepresentable {
     @Binding var isTurningLeft: Bool
     @Binding var isTurningRight: Bool
     @Binding var hasPlacedCar: Bool
+    @Binding var errorMessage: String?
 
     func makeUIView(context: Context) -> ARView {
         let arView = ARView(frame: .zero)
@@ -35,6 +36,7 @@ struct ARViewContainer: UIViewRepresentable {
         context.coordinator.isTurningLeft = isTurningLeft
         context.coordinator.isTurningRight = isTurningRight
         context.coordinator.hasPlacedCarBinding = $hasPlacedCar
+        context.coordinator.errorMessageBinding = $errorMessage
     }
 
     func makeCoordinator() -> Coordinator {
@@ -44,6 +46,7 @@ struct ARViewContainer: UIViewRepresentable {
     class Coordinator: NSObject, ARSessionDelegate {
         weak var arView: ARView?
         var hasPlacedCarBinding: Binding<Bool>?
+        var errorMessageBinding: Binding<String?>?
         private var hasPlacedCar = false
         private var carEntity: Entity?
         private var carAnchor: AnchorEntity?
@@ -68,8 +71,16 @@ struct ARViewContainer: UIViewRepresentable {
         private var deceleration: Float { acceleration * 4 }
         private var rotationSpeed: Float { Float(AppSettings.shared.steeringSensitivity) }
 
+        // エラーをUIに通知
+        private func reportError(_ message: String) {
+            print("❌ \(message)")
+            DispatchQueue.main.async {
+                self.errorMessageBinding?.wrappedValue = message
+            }
+        }
+
         func session(_ session: ARSession, didFailWithError error: Error) {
-            print("❌ ARSession エラー: \(error.localizedDescription)")
+            reportError("ARセッションエラー: \(error.localizedDescription)")
         }
 
         // 検知した平面をハイライト表示
@@ -145,7 +156,7 @@ struct ARViewContainer: UIViewRepresentable {
             guard let arView = arView else { return }
 
             guard let url = Bundle.main.url(forResource: "miniCooperbake", withExtension: "usdz") else {
-                print("❌ USDZファイルがバンドルに見つかりません")
+                reportError("車のモデルデータが見つかりません")
                 return
             }
 
@@ -173,7 +184,7 @@ struct ARViewContainer: UIViewRepresentable {
 
                 startAnimationTimer()
             } catch {
-                print("❌ USDZモデルの読み込みに失敗しました: \(error)")
+                reportError("車のモデル読み込みに失敗しました: \(error.localizedDescription)")
             }
         }
 

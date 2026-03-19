@@ -5,6 +5,7 @@ struct ContentView: View {
     @State private var joystickX: Double = 0
     @State private var joystickY: Double = 0
     @State private var hasPlacedCar = false
+    @State private var errorMessage: String?
 
     private var isTurningLeft: Bool {
         joystickX < -0.3
@@ -21,7 +22,8 @@ struct ContentView: View {
                 isBraking: .constant(false),
                 isTurningLeft: .constant(isTurningLeft),
                 isTurningRight: .constant(isTurningRight),
-                hasPlacedCar: $hasPlacedCar
+                hasPlacedCar: $hasPlacedCar,
+                errorMessage: $errorMessage
             )
             .edgesIgnoringSafeArea(.all)
 
@@ -72,6 +74,14 @@ struct ContentView: View {
                     .padding(.bottom, 50)
                 }
             }
+        }
+        .alert("エラー", isPresented: Binding(
+            get: { errorMessage != nil },
+            set: { if !$0 { errorMessage = nil } }
+        )) {
+            Button("OK") { errorMessage = nil }
+        } message: {
+            Text(errorMessage ?? "")
         }
     }
 }
