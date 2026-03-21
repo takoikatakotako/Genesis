@@ -2,27 +2,21 @@ import SwiftUI
 
 struct ContentView: View {
     @State private var isAccelerating = false
+    @State private var isBraking = false
+    @State private var isReversing = false
     @State private var joystickX: Double = 0
     @State private var joystickY: Double = 0
     @State private var hasPlacedCar = false
     @State private var errorMessage: String?
     @State private var currentSpeedRatio: Double = 0
 
-    private var isTurningLeft: Bool {
-        joystickX < -0.3
-    }
-
-    private var isTurningRight: Bool {
-        joystickX > 0.3
-    }
-
     var body: some View {
         ZStack {
             ARViewContainer(
                 isAccelerating: $isAccelerating,
-                isBraking: .constant(false),
-                isTurningLeft: .constant(isTurningLeft),
-                isTurningRight: .constant(isTurningRight),
+                isBraking: $isBraking,
+                steeringX: $joystickX,
+                isReverse: $isReversing,
                 hasPlacedCar: $hasPlacedCar,
                 errorMessage: $errorMessage,
                 currentSpeedRatio: $currentSpeedRatio
@@ -48,37 +42,37 @@ struct ContentView: View {
                         .padding(.bottom, 8)
 
                     HStack(alignment: .bottom, spacing: 20) {
-                        // ジョイスティック
-                        Joystick(xAxis: $joystickX, yAxis: $joystickY)
+                        // ジョイスティック（ステアリング）+ 速度メーター
+                        VStack(spacing: 8) {
+                            SpeedMeter(speedRatio: currentSpeedRatio)
+                            Joystick(xAxis: $joystickX, yAxis: $joystickY)
+                        }
 
                         Spacer()
 
-                        // 速度メーター
-                        SpeedMeter(speedRatio: currentSpeedRatio)
-
-                        // アクセルボタン
-                        Button(action: {}) {
-                            ZStack {
-                                Circle()
-                                    .fill(isAccelerating
-                                        ? Color.green
-                                        : Color.green.opacity(0.4))
-                                    .frame(width: 100, height: 100)
-
-                                Circle()
-                                    .stroke(Color.white.opacity(0.4), lineWidth: 2)
-                                    .frame(width: 100, height: 100)
-
-                                Image(systemName: "arrow.up")
-                                    .font(.system(size: 32, weight: .bold))
-                                    .foregroundColor(.white)
+                        // アクセル + バック
+                        ZStack(alignment: .bottomLeading) {
+                            // アクセルボタン（大）
+                            PedalButton(
+                                icon: "arrow.up",
+                                color: .green,
+                                isPressed: isAccelerating,
+                                size: 110
+                            ) { pressed in
+                                isAccelerating = pressed
                             }
+
+                            // バックボタン（小・左下）
+                            PedalButton(
+                                icon: "arrow.uturn.backward",
+                                color: .orange,
+                                isPressed: isReversing,
+                                size: 56
+                            ) { pressed in
+                                isReversing = pressed
+                            }
+                            .offset(x: -50, y: 10)
                         }
-                        .simultaneousGesture(
-                            DragGesture(minimumDistance: 0)
-                                .onChanged { _ in isAccelerating = true }
-                                .onEnded { _ in isAccelerating = false }
-                        )
                     }
                     .padding(.horizontal, 30)
                     .padding(.bottom, 40)
@@ -93,6 +87,36 @@ struct ContentView: View {
         } message: {
             Text(errorMessage ?? "")
         }
+    }
+}
+
+/// アクセル/ブレーキ/バック用のペダルボタン
+struct PedalButton: View {
+    let icon: String
+    let color: Color
+    let isPressed: Bool
+    var size: CGFloat = 80
+    let onPressChanged: (Bool) -> Void
+
+    var body: some View {
+        ZStack {
+            Circle()
+                .fill(isPressed ? color : color.opacity(0.4))
+                .frame(width: size, height: size)
+
+            Circle()
+                .stroke(Color.white.opacity(0.4), lineWidth: 2)
+                .frame(width: size, height: size)
+
+            Image(systemName: icon)
+                .font(.system(size: size * 0.3, weight: .bold))
+                .foregroundColor(.white)
+        }
+        .gesture(
+            DragGesture(minimumDistance: 0)
+                .onChanged { _ in onPressChanged(true) }
+                .onEnded { _ in onPressChanged(false) }
+        )
     }
 }
 

@@ -5,8 +5,8 @@ import ARKit
 struct ARViewContainer: UIViewRepresentable {
     @Binding var isAccelerating: Bool
     @Binding var isBraking: Bool
-    @Binding var isTurningLeft: Bool
-    @Binding var isTurningRight: Bool
+    @Binding var steeringX: Double
+    @Binding var isReverse: Bool
     @Binding var hasPlacedCar: Bool
     @Binding var errorMessage: String?
     @Binding var currentSpeedRatio: Double
@@ -37,8 +37,8 @@ struct ARViewContainer: UIViewRepresentable {
     func updateUIView(_ uiView: ARView, context: Context) {
         context.coordinator.isAccelerating = isAccelerating
         context.coordinator.isBraking = isBraking
-        context.coordinator.isTurningLeft = isTurningLeft
-        context.coordinator.isTurningRight = isTurningRight
+        context.coordinator.steeringX = Float(steeringX)
+        context.coordinator.isReverse = isReverse
         context.coordinator.hasPlacedCarBinding = $hasPlacedCar
         context.coordinator.errorMessageBinding = $errorMessage
         context.coordinator.currentSpeedRatioBinding = $currentSpeedRatio
@@ -63,14 +63,10 @@ struct ARViewContainer: UIViewRepresentable {
         private var updateTimer: Timer?
         private var planeEntities: [ARAnchor: (AnchorEntity, ModelEntity)] = [:]
 
-        var isAccelerating: Bool = false {
-            didSet { updateSpeed() }
-        }
-        var isBraking: Bool = false {
-            didSet { updateSpeed() }
-        }
-        var isTurningLeft: Bool = false
-        var isTurningRight: Bool = false
+        var isAccelerating: Bool = false
+        var isBraking: Bool = false
+        var steeringX: Float = 0.0
+        var isReverse: Bool = false
 
         private var maxSpeed: Float { Float(AppSettings.shared.maxSpeed) }
         private var acceleration: Float { Float(AppSettings.shared.acceleration) }
@@ -213,42 +209,46 @@ struct ARViewContainer: UIViewRepresentable {
             }
         }
 
-        private func updateSpeed() {
-            if isAccelerating {
-                currentSpeed = min(currentSpeed + acceleration, maxSpeed)
-            } else if isBraking {
-                currentSpeed = max(currentSpeed - deceleration, 0)
-            } else {
-                currentSpeed = max(currentSpeed - deceleration * 0.5, 0)
-            }
-        }
-
         private func updateCarPosition() {
             guard let car = carEntity else { return }
 
-            updateSpeed()
+            // 速度の更新
+            let directionMultiplier: Float = isReverse ? -1.0 : 1.0
 
-            if isTurningLeft {
-                currentRotation += rotationSpeed
-            } else if isTurningRight {
-                currentRotation -= rotationSpeed
+            if isAccelerating || isReverse {
+                // アクセルまたはバックボタン押下中は加速
+                let limit = maxSpeed * (isReverse ? 0.5 : 1.0)
+                currentSpeed = min(currentSpeed + acceleration, limit)
+            } else {
+                // エンジンブレーキで自然に減速
+                currentSpeed = max(currentSpeed - deceleration * 0.5, 0)
+            }
+
+            // ステアリング（速度が出ているときのみ曲がれる）
+            if currentSpeed > 0.001 {
+                if steeringX < -0.3 {
+                    currentRotation += rotationSpeed * directionMultiplier
+                } else if steeringX > 0.3 {
+                    currentRotation -= rotationSpeed * directionMultiplier
+                }
             }
 
             let steeringRotation = simd_quatf(angle: currentRotation, axis: SIMD3<Float>(0, 1, 0))
             car.orientation = steeringRotation * modelUpCorrection
 
             // 速度比率をUIに通知
+            let maxSpeedForMode = maxSpeed * (isReverse ? 0.5 : 1.0)
             DispatchQueue.main.async {
-                self.currentSpeedRatioBinding?.wrappedValue = Double(self.currentSpeed / self.maxSpeed)
+                self.currentSpeedRatioBinding?.wrappedValue = Double(self.currentSpeed / maxSpeedForMode)
             }
 
-            if currentSpeed > 0 {
+            if currentSpeed > 0.001 {
                 let direction = SIMD3<Float>(
                     -sin(currentRotation),
                     0,
                     -cos(currentRotation)
                 )
-                let movement = direction * (currentSpeed / 60.0)
+                let movement = direction * (currentSpeed * directionMultiplier / 60.0)
                 car.position += movement
             }
         }
