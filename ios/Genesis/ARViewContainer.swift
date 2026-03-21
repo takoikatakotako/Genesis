@@ -9,6 +9,7 @@ struct ARViewContainer: UIViewRepresentable {
     @Binding var isTurningRight: Bool
     @Binding var hasPlacedCar: Bool
     @Binding var errorMessage: String?
+    @Binding var currentSpeedRatio: Double
 
     func makeUIView(context: Context) -> ARView {
         let arView = ARView(frame: .zero)
@@ -22,6 +23,9 @@ struct ARViewContainer: UIViewRepresentable {
         // デリゲート設定
         context.coordinator.arView = arView
         arView.session.delegate = context.coordinator
+
+        // ARViewのデフォルトジェスチャーを無効化（タップの横取りを防ぐ）
+        arView.gestureRecognizers?.forEach { arView.removeGestureRecognizer($0) }
 
         // タップジェスチャーで車を配置
         let tapGesture = UITapGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.handleTap(_:)))
@@ -37,6 +41,7 @@ struct ARViewContainer: UIViewRepresentable {
         context.coordinator.isTurningRight = isTurningRight
         context.coordinator.hasPlacedCarBinding = $hasPlacedCar
         context.coordinator.errorMessageBinding = $errorMessage
+        context.coordinator.currentSpeedRatioBinding = $currentSpeedRatio
     }
 
     func makeCoordinator() -> Coordinator {
@@ -47,6 +52,7 @@ struct ARViewContainer: UIViewRepresentable {
         weak var arView: ARView?
         var hasPlacedCarBinding: Binding<Bool>?
         var errorMessageBinding: Binding<String?>?
+        var currentSpeedRatioBinding: Binding<Double>?
         private var hasPlacedCar = false
         private var carEntity: Entity?
         private var carAnchor: AnchorEntity?
@@ -136,14 +142,26 @@ struct ARViewContainer: UIViewRepresentable {
         }
 
         @objc func handleTap(_ recognizer: UITapGestureRecognizer) {
-            guard !hasPlacedCar, let arView = arView else { return }
+            guard !hasPlacedCar, let arView = arView else {
+                print("🔍 タップ無視: hasPlacedCar=\(hasPlacedCar), arView=\(arView != nil)")
+                return
+            }
 
             let location = recognizer.location(in: arView)
+            print("🔍 タップ位置: \(location)")
 
-            // レイキャストで平面上の位置を取得
-            let results = arView.raycast(from: location, allowing: .estimatedPlane, alignment: .horizontal)
-            guard let result = results.first else { return }
+            // レイキャストで平面上の位置を取得（検知済み平面 → 推定平面の順にフォールバック）
+            var results = arView.raycast(from: location, allowing: .existingPlaneGeometry, alignment: .horizontal)
+            if results.isEmpty {
+                results = arView.raycast(from: location, allowing: .estimatedPlane, alignment: .horizontal)
+            }
 
+            guard let result = results.first else {
+                print("🔍 レイキャスト結果なし")
+                return
+            }
+
+            print("🔍 車を配置します")
             placeCar(at: result.worldTransform)
             removeAllPlaneHighlights()
             hasPlacedCar = true
@@ -218,6 +236,11 @@ struct ARViewContainer: UIViewRepresentable {
 
             let steeringRotation = simd_quatf(angle: currentRotation, axis: SIMD3<Float>(0, 1, 0))
             car.orientation = steeringRotation * modelUpCorrection
+
+            // 速度比率をUIに通知
+            DispatchQueue.main.async {
+                self.currentSpeedRatioBinding?.wrappedValue = Double(self.currentSpeed / self.maxSpeed)
+            }
 
             if currentSpeed > 0 {
                 let direction = SIMD3<Float>(
