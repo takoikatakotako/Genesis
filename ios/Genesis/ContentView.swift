@@ -6,6 +6,7 @@ struct ContentView: View {
     @State private var joystickY: Double = 0
     @State private var hasPlacedCar = false
     @State private var errorMessage: String?
+    @State private var currentSpeedRatio: Double = 0
 
     private var isTurningLeft: Bool {
         joystickX < -0.3
@@ -23,7 +24,8 @@ struct ContentView: View {
                 isTurningLeft: .constant(isTurningLeft),
                 isTurningRight: .constant(isTurningRight),
                 hasPlacedCar: $hasPlacedCar,
-                errorMessage: $errorMessage
+                errorMessage: $errorMessage,
+                currentSpeedRatio: $currentSpeedRatio
             )
             .edgesIgnoringSafeArea(.all)
 
@@ -41,37 +43,45 @@ struct ContentView: View {
 
                 // 操作パネル（車配置後のみ表示）
                 if hasPlacedCar {
-                    HStack(alignment: .bottom, spacing: 40) {
-                        VStack {
-                            Text("移動")
-                                .font(.caption)
-                                .foregroundColor(.white)
-                            Joystick(xAxis: $joystickX, yAxis: $joystickY)
-                        }
+                    // ステアリングインジケーター
+                    SteeringIndicator(steeringValue: joystickX)
+                        .padding(.bottom, 8)
+
+                    HStack(alignment: .bottom, spacing: 20) {
+                        // ジョイスティック
+                        Joystick(xAxis: $joystickX, yAxis: $joystickY)
 
                         Spacer()
 
-                        VStack {
-                            Text("アクセル")
-                                .font(.caption)
-                                .foregroundColor(.white)
-                            Button(action: {}) {
-                                Text("A")
-                                    .font(.system(size: 40, weight: .bold))
+                        // 速度メーター
+                        SpeedMeter(speedRatio: currentSpeedRatio)
+
+                        // アクセルボタン
+                        Button(action: {}) {
+                            ZStack {
+                                Circle()
+                                    .fill(isAccelerating
+                                        ? Color.green
+                                        : Color.green.opacity(0.4))
+                                    .frame(width: 100, height: 100)
+
+                                Circle()
+                                    .stroke(Color.white.opacity(0.4), lineWidth: 2)
+                                    .frame(width: 100, height: 100)
+
+                                Image(systemName: "arrow.up")
+                                    .font(.system(size: 32, weight: .bold))
                                     .foregroundColor(.white)
-                                    .frame(width: 120, height: 120)
-                                    .background(isAccelerating ? Color.green : Color.green.opacity(0.6))
-                                    .cornerRadius(60)
                             }
-                            .simultaneousGesture(
-                                DragGesture(minimumDistance: 0)
-                                    .onChanged { _ in isAccelerating = true }
-                                    .onEnded { _ in isAccelerating = false }
-                            )
                         }
+                        .simultaneousGesture(
+                            DragGesture(minimumDistance: 0)
+                                .onChanged { _ in isAccelerating = true }
+                                .onEnded { _ in isAccelerating = false }
+                        )
                     }
                     .padding(.horizontal, 30)
-                    .padding(.bottom, 50)
+                    .padding(.bottom, 40)
                 }
             }
         }
