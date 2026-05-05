@@ -7,14 +7,9 @@
 
 import SwiftUI
 import SceneKit
-import AVFoundation
 
 struct TitleView: View {
-    @State private var isShowingAR = false
-    @State private var isShowingSettings = false
-    @State private var isShowingCameraPermissionDenied = false
-    @State private var titleOpacity: Double = 0
-    @State private var buttonOpacity: Double = 0
+    @State private var viewModel = TitleViewModel()
 
     var body: some View {
         GeometryReader { geo in
@@ -29,7 +24,7 @@ struct TitleView: View {
                 HStack {
                     Spacer()
                     Button {
-                        isShowingSettings = true
+                        viewModel.isShowingSettings = true
                     } label: {
                         Image(.settingIcon)
                             .resizable()
@@ -39,7 +34,7 @@ struct TitleView: View {
                 }
                 .padding(.horizontal, 24)
                 .padding(.top, 60)
-                .opacity(buttonOpacity)
+                .opacity(viewModel.buttonOpacity)
 
                 // タイトル
                 VStack(spacing: 8) {
@@ -54,13 +49,13 @@ struct TitleView: View {
                         .padding(.top, 8)
                 }
                 .padding(.top, 140)
-                .opacity(titleOpacity)
+                .opacity(viewModel.titleOpacity)
 
                 // 選択中の車（草に重なる位置に絶対配置）
                 CarPreviewView(modelFileName: "miniCooperbake")
                     .frame(width: 500, height: 500)
                     .position(x: geo.size.width * 0.6, y: geo.size.height * 0.65)
-                    .opacity(titleOpacity)
+                    .opacity(viewModel.titleOpacity)
 
                 // うさぎ（草の上）
                 HStack(alignment: .bottom) {
@@ -81,11 +76,11 @@ struct TitleView: View {
                 }
                 .frame(width: geo.size.width)
                 .position(x: geo.size.width / 2, y: geo.size.height * 0.73)
-                .opacity(titleOpacity)
+                .opacity(viewModel.titleOpacity)
 
                 // ドライブスタートボタン
                 Button {
-                    requestCameraPermission()
+                    viewModel.requestCameraPermission()
                 } label: {
                     HStack(spacing: 8) {
                         Image(systemName: "play.fill")
@@ -101,49 +96,23 @@ struct TitleView: View {
                     )
                 }
                 .position(x: geo.size.width / 2, y: geo.size.height * 0.88)
-                .opacity(buttonOpacity)
+                .opacity(viewModel.buttonOpacity)
             }
         }
         .ignoresSafeArea()
         .onAppear {
-            withAnimation(.easeIn(duration: 1.0)) {
-                titleOpacity = 1.0
-            }
-            withAnimation(.easeIn(duration: 1.0).delay(0.5)) {
-                buttonOpacity = 1.0
-            }
+            viewModel.startAnimations()
         }
-        .fullScreenCover(isPresented: $isShowingAR) {
+        .fullScreenCover(isPresented: $viewModel.isShowingAR) {
             ContentView()
         }
-        .fullScreenCover(isPresented: $isShowingCameraPermissionDenied) {
+        .fullScreenCover(isPresented: $viewModel.isShowingCameraPermissionDenied) {
             CameraPermissionDeniedView {
-                isShowingCameraPermissionDenied = false
+                viewModel.isShowingCameraPermissionDenied = false
             }
         }
-        .sheet(isPresented: $isShowingSettings) {
+        .sheet(isPresented: $viewModel.isShowingSettings) {
             SettingsView()
-        }
-    }
-
-    private func requestCameraPermission() {
-        switch AVCaptureDevice.authorizationStatus(for: .video) {
-        case .authorized:
-            isShowingAR = true
-        case .notDetermined:
-            AVCaptureDevice.requestAccess(for: .video) { granted in
-                DispatchQueue.main.async {
-                    if granted {
-                        isShowingAR = true
-                    } else {
-                        isShowingCameraPermissionDenied = true
-                    }
-                }
-            }
-        case .denied, .restricted:
-            isShowingCameraPermissionDenied = true
-        default:
-            isShowingAR = true
         }
     }
 }
