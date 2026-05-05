@@ -1,15 +1,12 @@
 {
   "images" : [
     {
-      "filename" : "reference.png",
+      "filename" : "setting-icon.png",
       "idiom" : "universal"
     }
   ],
   "info" : {
     "author" : "xcode",
     "version" : 1
-  },
-  "properties" : {
-    "width" : 0.182
   }
 }

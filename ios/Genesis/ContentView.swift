@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct ContentView: View {
+    @Environment(\.dismiss) private var dismiss
     @State private var isAccelerating = false
     @State private var isBraking = false
     @State private var isReversing = false
@@ -24,54 +25,74 @@ struct ContentView: View {
             .edgesIgnoringSafeArea(.all)
 
             VStack {
+                // 戻るボタン
+                HStack {
+                    Button {
+                        dismiss()
+                    } label: {
+                        Image(systemName: "xmark")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundColor(.white)
+                            .frame(width: 40, height: 40)
+                            .background(Color.black.opacity(0.4))
+                            .clipShape(Circle())
+                    }
+                    .padding(.leading, 16)
+                    .padding(.top, 16)
+                    Spacer()
+                }
+
                 // ステータステキスト
                 if !hasPlacedCar {
                     Text("平面を検知中…タップで車を配置")
                         .font(.headline)
-                        .padding()
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 20)
+                        .padding(.vertical, 12)
                         .background(Color.black.opacity(0.7))
                         .foregroundColor(.white)
                         .cornerRadius(10)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
                 Spacer()
 
                 // 操作パネル（車配置後のみ表示）
                 if hasPlacedCar {
-                    // ステアリングインジケーター
-                    SteeringIndicator(steeringValue: joystickX)
-                        .padding(.bottom, 8)
-
                     HStack(alignment: .bottom, spacing: 20) {
-                        // ジョイスティック（ステアリング）+ 速度メーター
+                        // ステアリング
                         VStack(spacing: 8) {
-                            SpeedMeter(speedRatio: currentSpeedRatio)
+                            SteeringIndicator(steeringValue: joystickX)
+                                .padding(.bottom, 4)
                             Joystick(xAxis: $joystickX, yAxis: $joystickY)
                         }
 
                         Spacer()
 
-                        // アクセル + バック
-                        ZStack(alignment: .bottomLeading) {
-                            // アクセルボタン（大）
-                            PedalButton(
-                                icon: "arrow.up",
-                                color: .green,
-                                isPressed: isAccelerating,
-                                size: 110
-                            ) { pressed in
-                                isAccelerating = pressed
-                            }
+                        // スピードメーター + アクセル + バック
+                        VStack(alignment: .trailing, spacing: 8) {
+                            SpeedMeter(speedRatio: currentSpeedRatio)
+                            ZStack(alignment: .bottomLeading) {
+                                // アクセルボタン（大）
+                                PedalButton(
+                                    icon: "arrow.up",
+                                    color: .green,
+                                    isPressed: isAccelerating,
+                                    size: 110
+                                ) { pressed in
+                                    isAccelerating = pressed
+                                }
 
-                            // バックボタン（小・左下）
-                            PedalButton(
-                                icon: "arrow.uturn.backward",
-                                color: .orange,
-                                isPressed: isReversing,
-                                size: 56
-                            ) { pressed in
-                                isReversing = pressed
+                                // バックボタン（小・左下）
+                                PedalButton(
+                                    icon: "arrow.uturn.backward",
+                                    color: .orange,
+                                    isPressed: isReversing,
+                                    size: 56
+                                ) { pressed in
+                                    isReversing = pressed
+                                }
+                                .offset(x: -50, y: 10)
                             }
-                            .offset(x: -50, y: 10)
                         }
                     }
                     .padding(.horizontal, 30)
@@ -120,6 +141,38 @@ struct PedalButton: View {
     }
 }
 
-#Preview {
-    ContentView()
+#Preview("操作パネル") {
+    ZStack {
+        Image(.previewRoomSample)
+            .resizable()
+            .frame(width: 393, height: 852)
+            .scaledToFill()
+            .clipped()
+
+        VStack {
+            Spacer()
+
+            HStack(alignment: .bottom, spacing: 20) {
+                VStack(spacing: 8) {
+                    SteeringIndicator(steeringValue: 0.3)
+                        .padding(.bottom, 4)
+                    Joystick(xAxis: .constant(0), yAxis: .constant(0))
+                }
+                Spacer()
+                VStack(alignment: .trailing, spacing: 8) {
+                    SpeedMeter(speedRatio: 0.5)
+                    ZStack(alignment: .bottomLeading) {
+                        PedalButton(icon: "arrow.up", color: .green, isPressed: false, size: 110) { _ in }
+                        PedalButton(icon: "arrow.uturn.backward", color: .orange, isPressed: false, size: 56) { _ in }
+                            .offset(x: -50, y: 10)
+                    }
+                }
+            }
+            .padding(.horizontal, 30)
+            .padding(.bottom, 40)
+        }
+        .frame(width: 393, height: 852)
+    }
+    .frame(width: 393, height: 852)
+    .clipped()
 }

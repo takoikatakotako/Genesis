@@ -14,19 +14,6 @@ struct SettingsView: View {
     var body: some View {
         NavigationStack {
             Form {
-                Section("車") {
-                    NavigationLink {
-                        CarSelectionView(selectedCarId: $settings.selectedCarId)
-                    } label: {
-                        HStack {
-                            Text("モデル")
-                            Spacer()
-                            Text("\(settings.selectedCar.emoji) \(settings.selectedCar.name)")
-                                .foregroundColor(.secondary)
-                        }
-                    }
-                }
-
                 Section("操作") {
                     VStack(alignment: .leading) {
                         HStack {
@@ -36,6 +23,7 @@ struct SettingsView: View {
                                 .foregroundColor(.secondary)
                         }
                         Slider(value: $settings.steeringSensitivity, in: 0.01...0.1, step: 0.01)
+                            .tint(Color(red: 0.3, green: 0.55, blue: 0.35))
                     }
                 }
 
@@ -48,6 +36,7 @@ struct SettingsView: View {
                                 .foregroundColor(.secondary)
                         }
                         Slider(value: $settings.maxSpeed, in: 0.05...0.5, step: 0.05)
+                            .tint(Color(red: 0.3, green: 0.55, blue: 0.35))
                     }
 
                     VStack(alignment: .leading) {
@@ -58,6 +47,7 @@ struct SettingsView: View {
                                 .foregroundColor(.secondary)
                         }
                         Slider(value: $settings.acceleration, in: 0.001...0.02, step: 0.001)
+                            .tint(Color(red: 0.3, green: 0.55, blue: 0.35))
                     }
                 }
 
@@ -75,6 +65,7 @@ struct SettingsView: View {
                     Button("閉じる") {
                         dismiss()
                     }
+                    .foregroundColor(Color(red: 0.3, green: 0.55, blue: 0.35))
                 }
             }
         }

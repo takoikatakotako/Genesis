@@ -1,0 +1,12 @@
+{
+  "images" : [
+    {
+      "filename" : "brown-rabbit.png",
+      "idiom" : "universal"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  }
+}
