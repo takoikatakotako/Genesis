@@ -97,8 +97,8 @@ struct ARViewContainer: UIViewRepresentable {
                 guard let planeAnchor = anchor as? ARPlaneAnchor,
                       planeAnchor.alignment == .horizontal else { continue }
 
-                let extent = planeAnchor.extent
-                let mesh = MeshResource.generatePlane(width: extent.x, depth: extent.z)
+                let planeExtent = planeAnchor.planeExtent
+                let mesh = MeshResource.generatePlane(width: planeExtent.width, depth: planeExtent.height)
                 var material = SimpleMaterial()
                 material.color = .init(tint: UIColor(red: 0.3, green: 0.7, blue: 1.0, alpha: 0.3))
                 let planeEntity = ModelEntity(mesh: mesh, materials: [material])
@@ -128,8 +128,8 @@ struct ARViewContainer: UIViewRepresentable {
                 guard let planeAnchor = anchor as? ARPlaneAnchor,
                       let (_, planeEntity) = planeEntities[anchor] else { continue }
 
-                let extent = planeAnchor.extent
-                let newMesh = MeshResource.generatePlane(width: extent.x, depth: extent.z)
+                let planeExtent = planeAnchor.planeExtent
+                let newMesh = MeshResource.generatePlane(width: planeExtent.width, depth: planeExtent.height)
                 planeEntity.model?.mesh = newMesh
             }
         }
