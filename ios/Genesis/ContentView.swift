@@ -8,6 +8,7 @@ struct ContentView: View {
     @State private var joystickX: Double = 0
     @State private var joystickY: Double = 0
     @State private var hasPlacedCar = false
+    @State private var hasDetectedPlane = false
     @State private var errorMessage: String?
     @State private var currentSpeedRatio: Double = 0
 
@@ -19,6 +20,7 @@ struct ContentView: View {
                 steeringX: $joystickX,
                 isReverse: $isReversing,
                 hasPlacedCar: $hasPlacedCar,
+                hasDetectedPlane: $hasDetectedPlane,
                 errorMessage: $errorMessage,
                 currentSpeedRatio: $currentSpeedRatio
             )
@@ -44,15 +46,7 @@ struct ContentView: View {
 
                 // ステータステキスト
                 if !hasPlacedCar {
-                    Text("平面を検知中…タップで車を配置")
-                        .font(.headline)
-                        .multilineTextAlignment(.center)
-                        .padding(.horizontal, 20)
-                        .padding(.vertical, 12)
-                        .background(Color.black.opacity(0.7))
-                        .foregroundColor(.white)
-                        .cornerRadius(10)
-                        .fixedSize(horizontal: false, vertical: true)
+                    PlaneDetectionStatusView(hasDetectedPlane: hasDetectedPlane)
                 }
                 Spacer()
 
@@ -108,6 +102,33 @@ struct ContentView: View {
         } message: {
             Text(errorMessage ?? "")
         }
+    }
+}
+
+// MARK: - 平面検知ステータス表示
+
+struct PlaneDetectionStatusView: View {
+    let hasDetectedPlane: Bool
+
+    var body: some View {
+        HStack(spacing: 10) {
+            if hasDetectedPlane {
+                Image(systemName: "checkmark.circle.fill")
+                    .foregroundColor(.green)
+                Text("平面を検知しました！タップして車を配置")
+            } else {
+                ProgressView()
+                    .tint(.white)
+                Text("平面を探しています...")
+            }
+        }
+        .font(.headline)
+        .padding(.horizontal, 20)
+        .padding(.vertical, 12)
+        .background(Color.black.opacity(0.7))
+        .foregroundColor(.white)
+        .cornerRadius(10)
+        .animation(.easeInOut, value: hasDetectedPlane)
     }
 }
 
