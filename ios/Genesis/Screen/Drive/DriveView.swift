@@ -1,28 +1,20 @@
 import SwiftUI
 
-struct ContentView: View {
+struct DriveView: View {
     @Environment(\.dismiss) private var dismiss
-    @State private var isAccelerating = false
-    @State private var isBraking = false
-    @State private var isReversing = false
-    @State private var joystickX: Double = 0
-    @State private var joystickY: Double = 0
-    @State private var hasPlacedCar = false
-    @State private var hasDetectedPlane = false
-    @State private var errorMessage: String?
-    @State private var currentSpeedRatio: Double = 0
+    @State private var viewModel = DriveViewModel()
 
     var body: some View {
         ZStack {
             ARViewContainer(
-                isAccelerating: $isAccelerating,
-                isBraking: $isBraking,
-                steeringX: $joystickX,
-                isReverse: $isReversing,
-                hasPlacedCar: $hasPlacedCar,
-                hasDetectedPlane: $hasDetectedPlane,
-                errorMessage: $errorMessage,
-                currentSpeedRatio: $currentSpeedRatio
+                isAccelerating: $viewModel.isAccelerating,
+                isBraking: $viewModel.isBraking,
+                steeringX: $viewModel.joystickX,
+                isReverse: $viewModel.isReversing,
+                hasPlacedCar: $viewModel.hasPlacedCar,
+                hasDetectedPlane: $viewModel.hasDetectedPlane,
+                errorMessage: $viewModel.errorMessage,
+                currentSpeedRatio: $viewModel.currentSpeedRatio
             )
             .edgesIgnoringSafeArea(.all)
 
@@ -45,45 +37,45 @@ struct ContentView: View {
                 }
 
                 // ステータステキスト
-                if !hasPlacedCar {
-                    PlaneDetectionStatusView(hasDetectedPlane: hasDetectedPlane)
+                if !viewModel.hasPlacedCar {
+                    PlaneDetectionStatusView(hasDetectedPlane: viewModel.hasDetectedPlane)
                 }
                 Spacer()
 
                 // 操作パネル（車配置後のみ表示）
-                if hasPlacedCar {
+                if viewModel.hasPlacedCar {
                     HStack(alignment: .bottom, spacing: 20) {
                         // ステアリング
                         VStack(spacing: 8) {
-                            SteeringIndicator(steeringValue: joystickX)
+                            SteeringIndicator(steeringValue: viewModel.joystickX)
                                 .padding(.bottom, 4)
-                            Joystick(xAxis: $joystickX, yAxis: $joystickY)
+                            Joystick(xAxis: $viewModel.joystickX, yAxis: $viewModel.joystickY)
                         }
 
                         Spacer()
 
                         // スピードメーター + アクセル + バック
                         VStack(alignment: .trailing, spacing: 8) {
-                            SpeedMeter(speedRatio: currentSpeedRatio)
+                            SpeedMeter(speedRatio: viewModel.currentSpeedRatio)
                             ZStack(alignment: .bottomLeading) {
                                 // アクセルボタン（大）
                                 PedalButton(
                                     icon: "arrow.up",
                                     color: .green,
-                                    isPressed: isAccelerating,
+                                    isPressed: viewModel.isAccelerating,
                                     size: 110
                                 ) { pressed in
-                                    isAccelerating = pressed
+                                    viewModel.isAccelerating = pressed
                                 }
 
                                 // バックボタン（小・左下）
                                 PedalButton(
                                     icon: "arrow.uturn.backward",
                                     color: .orange,
-                                    isPressed: isReversing,
+                                    isPressed: viewModel.isReversing,
                                     size: 56
                                 ) { pressed in
-                                    isReversing = pressed
+                                    viewModel.isReversing = pressed
                                 }
                                 .offset(x: -50, y: 10)
                             }
@@ -95,12 +87,12 @@ struct ContentView: View {
             }
         }
         .alert("エラー", isPresented: Binding(
-            get: { errorMessage != nil },
-            set: { if !$0 { errorMessage = nil } }
+            get: { viewModel.errorMessage != nil },
+            set: { if !$0 { viewModel.clearError() } }
         )) {
-            Button("OK") { errorMessage = nil }
+            Button("OK") { viewModel.clearError() }
         } message: {
-            Text(errorMessage ?? "")
+            Text(viewModel.errorMessage ?? "")
         }
     }
 }

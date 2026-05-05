@@ -104,7 +104,7 @@ struct TitleView: View {
             viewModel.startAnimations()
         }
         .fullScreenCover(isPresented: $viewModel.isShowingAR) {
-            ContentView()
+            DriveView()
         }
         .fullScreenCover(isPresented: $viewModel.isShowingCameraPermissionDenied) {
             CameraPermissionDeniedView {
