@@ -28,10 +28,13 @@ struct ContentView: View {
                 if !hasPlacedCar {
                     Text("平面を検知中…タップで車を配置")
                         .font(.headline)
-                        .padding()
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 20)
+                        .padding(.vertical, 12)
                         .background(Color.black.opacity(0.7))
                         .foregroundColor(.white)
                         .cornerRadius(10)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
                 Spacer()
 
@@ -122,13 +125,11 @@ struct PedalButton: View {
 
 #Preview("操作パネル") {
     ZStack {
-        Color(red: 0.85, green: 0.78, blue: 0.68)
-            .ignoresSafeArea()
-        Rectangle()
-            .fill(Color(red: 0.72, green: 0.65, blue: 0.55))
-            .frame(height: 300)
-            .frame(maxHeight: .infinity, alignment: .bottom)
-            .ignoresSafeArea()
+        Image(.previewRoomSample)
+            .resizable()
+            .frame(width: 393, height: 852)
+            .scaledToFill()
+            .clipped()
 
         VStack {
             Spacer()
@@ -152,5 +153,8 @@ struct PedalButton: View {
             .padding(.horizontal, 30)
             .padding(.bottom, 40)
         }
+        .frame(width: 393, height: 852)
     }
+    .frame(width: 393, height: 852)
+    .clipped()
 }
