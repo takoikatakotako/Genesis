@@ -8,6 +8,7 @@ struct ARViewContainer: UIViewRepresentable {
     @Binding var steeringX: Double
     @Binding var isReverse: Bool
     @Binding var hasPlacedCar: Bool
+    @Binding var hasDetectedPlane: Bool
     @Binding var errorMessage: String?
     @Binding var currentSpeedRatio: Double
 
@@ -40,6 +41,7 @@ struct ARViewContainer: UIViewRepresentable {
         context.coordinator.steeringX = Float(steeringX)
         context.coordinator.isReverse = isReverse
         context.coordinator.hasPlacedCarBinding = $hasPlacedCar
+        context.coordinator.hasDetectedPlaneBinding = $hasDetectedPlane
         context.coordinator.errorMessageBinding = $errorMessage
         context.coordinator.currentSpeedRatioBinding = $currentSpeedRatio
     }
@@ -51,6 +53,7 @@ struct ARViewContainer: UIViewRepresentable {
     class Coordinator: NSObject, ARSessionDelegate {
         weak var arView: ARView?
         var hasPlacedCarBinding: Binding<Bool>?
+        var hasDetectedPlaneBinding: Binding<Bool>?
         var errorMessageBinding: Binding<String?>?
         var currentSpeedRatioBinding: Binding<Double>?
         private var hasPlacedCar = false
@@ -89,6 +92,7 @@ struct ARViewContainer: UIViewRepresentable {
         func session(_ session: ARSession, didAdd anchors: [ARAnchor]) {
             guard !hasPlacedCar, let arView = arView else { return }
 
+            var foundPlane = false
             for anchor in anchors {
                 guard let planeAnchor = anchor as? ARPlaneAnchor,
                       planeAnchor.alignment == .horizontal else { continue }
@@ -104,6 +108,15 @@ struct ARViewContainer: UIViewRepresentable {
                 arView.scene.addAnchor(anchorEntity)
 
                 planeEntities[anchor] = (anchorEntity, planeEntity)
+                foundPlane = true
+            }
+
+            // 初めて平面を検知した時に通知
+            if foundPlane, hasDetectedPlaneBinding?.wrappedValue == false {
+                DispatchQueue.main.async {
+                    self.hasDetectedPlaneBinding?.wrappedValue = true
+                    UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                }
             }
         }
 
@@ -146,8 +159,8 @@ struct ARViewContainer: UIViewRepresentable {
             let location = recognizer.location(in: arView)
             print("🔍 タップ位置: \(location)")
 
-            // レイキャストで平面上の位置を取得（検知済み平面 → 推定平面の順にフォールバック）
-            var results = arView.raycast(from: location, allowing: .existingPlaneGeometry, alignment: .horizontal)
+            // レイキャストで平面上の位置を取得（無限平面 → 推定平面の順にフォールバック）
+            var results = arView.raycast(from: location, allowing: .existingPlaneInfinite, alignment: .horizontal)
             if results.isEmpty {
                 results = arView.raycast(from: location, allowing: .estimatedPlane, alignment: .horizontal)
             }
