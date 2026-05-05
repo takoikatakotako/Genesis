@@ -7,10 +7,12 @@
 
 import SwiftUI
 import SceneKit
+import AVFoundation
 
 struct TitleView: View {
     @State private var isShowingAR = false
     @State private var isShowingSettings = false
+    @State private var isShowingCameraPermissionDenied = false
     @State private var titleOpacity: Double = 0
     @State private var buttonOpacity: Double = 0
 
@@ -83,7 +85,7 @@ struct TitleView: View {
 
                 // ドライブスタートボタン
                 Button {
-                    isShowingAR = true
+                    requestCameraPermission()
                 } label: {
                     HStack(spacing: 8) {
                         Image(systemName: "play.fill")
@@ -114,8 +116,34 @@ struct TitleView: View {
         .fullScreenCover(isPresented: $isShowingAR) {
             ContentView()
         }
+        .fullScreenCover(isPresented: $isShowingCameraPermissionDenied) {
+            CameraPermissionDeniedView {
+                isShowingCameraPermissionDenied = false
+            }
+        }
         .sheet(isPresented: $isShowingSettings) {
             SettingsView()
+        }
+    }
+
+    private func requestCameraPermission() {
+        switch AVCaptureDevice.authorizationStatus(for: .video) {
+        case .authorized:
+            isShowingAR = true
+        case .notDetermined:
+            AVCaptureDevice.requestAccess(for: .video) { granted in
+                DispatchQueue.main.async {
+                    if granted {
+                        isShowingAR = true
+                    } else {
+                        isShowingCameraPermissionDenied = true
+                    }
+                }
+            }
+        case .denied, .restricted:
+            isShowingCameraPermissionDenied = true
+        default:
+            isShowingAR = true
         }
     }
 }

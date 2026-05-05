@@ -1,5 +1,4 @@
 import SwiftUI
-import AVFoundation
 
 struct ContentView: View {
     @Environment(\.dismiss) private var dismiss
@@ -12,117 +11,96 @@ struct ContentView: View {
     @State private var hasDetectedPlane = false
     @State private var errorMessage: String?
     @State private var currentSpeedRatio: Double = 0
-    @State private var cameraPermissionDenied = false
 
     var body: some View {
-        Group {
-            if cameraPermissionDenied {
-                CameraPermissionDeniedView {
-                    dismiss()
+        ZStack {
+            ARViewContainer(
+                isAccelerating: $isAccelerating,
+                isBraking: $isBraking,
+                steeringX: $joystickX,
+                isReverse: $isReversing,
+                hasPlacedCar: $hasPlacedCar,
+                hasDetectedPlane: $hasDetectedPlane,
+                errorMessage: $errorMessage,
+                currentSpeedRatio: $currentSpeedRatio
+            )
+            .edgesIgnoringSafeArea(.all)
+
+            VStack {
+                // 戻るボタン
+                HStack {
+                    Button {
+                        dismiss()
+                    } label: {
+                        Image(systemName: "xmark")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundColor(.white)
+                            .frame(width: 40, height: 40)
+                            .background(Color.black.opacity(0.4))
+                            .clipShape(Circle())
+                    }
+                    .padding(.leading, 16)
+                    .padding(.top, 16)
+                    Spacer()
                 }
-            } else {
-                ZStack {
-                    ARViewContainer(
-                        isAccelerating: $isAccelerating,
-                        isBraking: $isBraking,
-                        steeringX: $joystickX,
-                        isReverse: $isReversing,
-                        hasPlacedCar: $hasPlacedCar,
-                        hasDetectedPlane: $hasDetectedPlane,
-                        errorMessage: $errorMessage,
-                        currentSpeedRatio: $currentSpeedRatio
-                    )
-                    .edgesIgnoringSafeArea(.all)
 
-                    VStack {
-                        // 戻るボタン
-                        HStack {
-                            Button {
-                                dismiss()
-                            } label: {
-                                Image(systemName: "xmark")
-                                    .font(.system(size: 16, weight: .semibold))
-                                    .foregroundColor(.white)
-                                    .frame(width: 40, height: 40)
-                                    .background(Color.black.opacity(0.4))
-                                    .clipShape(Circle())
-                            }
-                            .padding(.leading, 16)
-                            .padding(.top, 16)
-                            Spacer()
+                // ステータステキスト
+                if !hasPlacedCar {
+                    PlaneDetectionStatusView(hasDetectedPlane: hasDetectedPlane)
+                }
+                Spacer()
+
+                // 操作パネル（車配置後のみ表示）
+                if hasPlacedCar {
+                    HStack(alignment: .bottom, spacing: 20) {
+                        // ステアリング
+                        VStack(spacing: 8) {
+                            SteeringIndicator(steeringValue: joystickX)
+                                .padding(.bottom, 4)
+                            Joystick(xAxis: $joystickX, yAxis: $joystickY)
                         }
 
-                        // ステータステキスト
-                        if !hasPlacedCar {
-                            PlaneDetectionStatusView(hasDetectedPlane: hasDetectedPlane)
-                        }
                         Spacer()
 
-                        // 操作パネル（車配置後のみ表示）
-                        if hasPlacedCar {
-                            HStack(alignment: .bottom, spacing: 20) {
-                                // ステアリング
-                                VStack(spacing: 8) {
-                                    SteeringIndicator(steeringValue: joystickX)
-                                        .padding(.bottom, 4)
-                                    Joystick(xAxis: $joystickX, yAxis: $joystickY)
+                        // スピードメーター + アクセル + バック
+                        VStack(alignment: .trailing, spacing: 8) {
+                            SpeedMeter(speedRatio: currentSpeedRatio)
+                            ZStack(alignment: .bottomLeading) {
+                                // アクセルボタン（大）
+                                PedalButton(
+                                    icon: "arrow.up",
+                                    color: .green,
+                                    isPressed: isAccelerating,
+                                    size: 110
+                                ) { pressed in
+                                    isAccelerating = pressed
                                 }
 
-                                Spacer()
-
-                                // スピードメーター + アクセル + バック
-                                VStack(alignment: .trailing, spacing: 8) {
-                                    SpeedMeter(speedRatio: currentSpeedRatio)
-                                    ZStack(alignment: .bottomLeading) {
-                                        // アクセルボタン（大）
-                                        PedalButton(
-                                            icon: "arrow.up",
-                                            color: .green,
-                                            isPressed: isAccelerating,
-                                            size: 110
-                                        ) { pressed in
-                                            isAccelerating = pressed
-                                        }
-
-                                        // バックボタン（小・左下）
-                                        PedalButton(
-                                            icon: "arrow.uturn.backward",
-                                            color: .orange,
-                                            isPressed: isReversing,
-                                            size: 56
-                                        ) { pressed in
-                                            isReversing = pressed
-                                        }
-                                        .offset(x: -50, y: 10)
-                                    }
+                                // バックボタン（小・左下）
+                                PedalButton(
+                                    icon: "arrow.uturn.backward",
+                                    color: .orange,
+                                    isPressed: isReversing,
+                                    size: 56
+                                ) { pressed in
+                                    isReversing = pressed
                                 }
+                                .offset(x: -50, y: 10)
                             }
-                            .padding(.horizontal, 30)
-                            .padding(.bottom, 40)
                         }
                     }
-                }
-                .alert("エラー", isPresented: Binding(
-                    get: { errorMessage != nil },
-                    set: { if !$0 { errorMessage = nil } }
-                )) {
-                    Button("OK") { errorMessage = nil }
-                } message: {
-                    Text(errorMessage ?? "")
+                    .padding(.horizontal, 30)
+                    .padding(.bottom, 40)
                 }
             }
         }
-        .onAppear {
-            checkCameraPermission()
-        }
-    }
-
-    private func checkCameraPermission() {
-        switch AVCaptureDevice.authorizationStatus(for: .video) {
-        case .denied, .restricted:
-            cameraPermissionDenied = true
-        default:
-            break
+        .alert("エラー", isPresented: Binding(
+            get: { errorMessage != nil },
+            set: { if !$0 { errorMessage = nil } }
+        )) {
+            Button("OK") { errorMessage = nil }
+        } message: {
+            Text(errorMessage ?? "")
         }
     }
 }
