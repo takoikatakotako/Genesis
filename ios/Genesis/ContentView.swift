@@ -37,41 +37,41 @@ struct ContentView: View {
 
                 // 操作パネル（車配置後のみ表示）
                 if hasPlacedCar {
-                    // ステアリングインジケーター
-                    SteeringIndicator(steeringValue: joystickX)
-                        .padding(.bottom, 8)
-
                     HStack(alignment: .bottom, spacing: 20) {
-                        // ジョイスティック（ステアリング）+ 速度メーター
+                        // ステアリング
                         VStack(spacing: 8) {
-                            SpeedMeter(speedRatio: currentSpeedRatio)
+                            SteeringIndicator(steeringValue: joystickX)
+                                .padding(.bottom, 4)
                             Joystick(xAxis: $joystickX, yAxis: $joystickY)
                         }
 
                         Spacer()
 
-                        // アクセル + バック
-                        ZStack(alignment: .bottomLeading) {
-                            // アクセルボタン（大）
-                            PedalButton(
-                                icon: "arrow.up",
-                                color: .green,
-                                isPressed: isAccelerating,
-                                size: 110
-                            ) { pressed in
-                                isAccelerating = pressed
-                            }
+                        // スピードメーター + アクセル + バック
+                        VStack(alignment: .trailing, spacing: 8) {
+                            SpeedMeter(speedRatio: currentSpeedRatio)
+                            ZStack(alignment: .bottomLeading) {
+                                // アクセルボタン（大）
+                                PedalButton(
+                                    icon: "arrow.up",
+                                    color: .green,
+                                    isPressed: isAccelerating,
+                                    size: 110
+                                ) { pressed in
+                                    isAccelerating = pressed
+                                }
 
-                            // バックボタン（小・左下）
-                            PedalButton(
-                                icon: "arrow.uturn.backward",
-                                color: .orange,
-                                isPressed: isReversing,
-                                size: 56
-                            ) { pressed in
-                                isReversing = pressed
+                                // バックボタン（小・左下）
+                                PedalButton(
+                                    icon: "arrow.uturn.backward",
+                                    color: .orange,
+                                    isPressed: isReversing,
+                                    size: 56
+                                ) { pressed in
+                                    isReversing = pressed
+                                }
+                                .offset(x: -50, y: 10)
                             }
-                            .offset(x: -50, y: 10)
                         }
                     }
                     .padding(.horizontal, 30)
@@ -120,6 +120,37 @@ struct PedalButton: View {
     }
 }
 
-#Preview {
-    ContentView()
+#Preview("操作パネル") {
+    ZStack {
+        Color(red: 0.85, green: 0.78, blue: 0.68)
+            .ignoresSafeArea()
+        Rectangle()
+            .fill(Color(red: 0.72, green: 0.65, blue: 0.55))
+            .frame(height: 300)
+            .frame(maxHeight: .infinity, alignment: .bottom)
+            .ignoresSafeArea()
+
+        VStack {
+            Spacer()
+
+            HStack(alignment: .bottom, spacing: 20) {
+                VStack(spacing: 8) {
+                    SteeringIndicator(steeringValue: 0.3)
+                        .padding(.bottom, 4)
+                    Joystick(xAxis: .constant(0), yAxis: .constant(0))
+                }
+                Spacer()
+                VStack(alignment: .trailing, spacing: 8) {
+                    SpeedMeter(speedRatio: 0.5)
+                    ZStack(alignment: .bottomLeading) {
+                        PedalButton(icon: "arrow.up", color: .green, isPressed: false, size: 110) { _ in }
+                        PedalButton(icon: "arrow.uturn.backward", color: .orange, isPressed: false, size: 56) { _ in }
+                            .offset(x: -50, y: 10)
+                    }
+                }
+            }
+            .padding(.horizontal, 30)
+            .padding(.bottom, 40)
+        }
+    }
 }
