@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct ContentView: View {
+    @Environment(\.dismiss) private var dismiss
     @State private var isAccelerating = false
     @State private var isBraking = false
     @State private var isReversing = false
@@ -24,6 +25,23 @@ struct ContentView: View {
             .edgesIgnoringSafeArea(.all)
 
             VStack {
+                // 戻るボタン
+                HStack {
+                    Button {
+                        dismiss()
+                    } label: {
+                        Image(systemName: "xmark")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundColor(.white)
+                            .frame(width: 40, height: 40)
+                            .background(Color.black.opacity(0.4))
+                            .clipShape(Circle())
+                    }
+                    .padding(.leading, 16)
+                    .padding(.top, 16)
+                    Spacer()
+                }
+
                 // ステータステキスト
                 if !hasPlacedCar {
                     Text("平面を検知中…タップで車を配置")
