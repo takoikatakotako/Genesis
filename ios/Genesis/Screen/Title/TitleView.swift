@@ -52,7 +52,7 @@ struct TitleView: View {
                 .opacity(viewModel.titleOpacity)
 
                 // 選択中の車（草に重なる位置に絶対配置）
-                CarPreviewView(modelFileName: "miniCooperbake")
+                CarPreviewView(modelFileName: "classicCar")
                     .frame(width: 500, height: 500)
                     .position(x: geo.size.width * 0.6, y: geo.size.height * 0.65)
                     .opacity(viewModel.titleOpacity)

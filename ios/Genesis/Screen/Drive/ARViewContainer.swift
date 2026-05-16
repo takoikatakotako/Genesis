@@ -182,7 +182,7 @@ struct ARViewContainer: UIViewRepresentable {
         private func placeCar(at worldTransform: simd_float4x4) {
             guard let arView = arView else { return }
 
-            guard let url = Bundle.main.url(forResource: "miniCooperbake", withExtension: "usdz") else {
+            guard let url = Bundle.main.url(forResource: "classicCar", withExtension: "usdz") else {
                 reportError("車のモデルデータが見つかりません")
                 return
             }
