@@ -18,10 +18,10 @@ struct CarModel: Identifiable, Equatable {
     /// 利用可能な車モデル一覧（モック）
     static let all: [CarModel] = [
         CarModel(
-            id: "mini_cooper",
-            name: "Mini Cooper",
+            id: "classic_car",
+            name: "クラシックカー",
             description: "コンパクトでキビキビ走る街乗りの定番",
-            modelFileName: "miniCooperbake",
+            modelFileName: "classicCar",
             emoji: "🚗"
         ),
         CarModel(
