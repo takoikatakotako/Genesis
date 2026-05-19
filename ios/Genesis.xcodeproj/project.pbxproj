@@ -29,9 +29,22 @@
 		178747092F6B092600FC69B7 /* GenesisUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = GenesisUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		7EBF12606AD04174BFEB97C2 /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 178746F12F6B092400FC69B7 /* Genesis */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		178746F42F6B092400FC69B7 /* Genesis */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				7EBF12606AD04174BFEB97C2 /* PBXFileSystemSynchronizedBuildFileExceptionSet */,
+			);
 			path = Genesis;
 			sourceTree = "<group>";
 		};
