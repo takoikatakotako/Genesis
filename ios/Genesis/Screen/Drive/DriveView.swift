@@ -1,4 +1,5 @@
 import SwiftUI
+import GoogleMobileAds
 
 struct DriveView: View {
     @Environment(\.dismiss) private var dismiss
@@ -22,7 +23,7 @@ struct DriveView: View {
                 // 戻るボタン
                 HStack {
                     Button {
-                        dismiss()
+                        showInterstitialAndDismiss()
                     } label: {
                         Image(systemName: "xmark")
                             .font(.system(size: 16, weight: .semibold))
@@ -86,6 +87,9 @@ struct DriveView: View {
                 }
             }
         }
+        .task {
+            await AdManager.shared.loadInterstitialAd()
+        }
         .alert("エラー", isPresented: Binding(
             get: { viewModel.errorMessage != nil },
             set: { if !$0 { viewModel.clearError() } }
@@ -94,6 +98,17 @@ struct DriveView: View {
         } message: {
             Text(viewModel.errorMessage ?? "")
         }
+    }
+
+    private func showInterstitialAndDismiss() {
+        guard let rootVC = UIApplication.shared.connectedScenes
+            .compactMap({ $0 as? UIWindowScene })
+            .first?.windows.first?.rootViewController else {
+            dismiss()
+            return
+        }
+        AdManager.shared.showInterstitialAd(from: rootVC)
+        dismiss()
     }
 }
 

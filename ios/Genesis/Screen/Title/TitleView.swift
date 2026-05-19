@@ -7,6 +7,7 @@
 
 import SwiftUI
 import SceneKit
+import GoogleMobileAds
 
 struct TitleView: View {
     @State private var viewModel = TitleViewModel()
@@ -97,6 +98,13 @@ struct TitleView: View {
                 }
                 .position(x: geo.size.width / 2, y: geo.size.height * 0.88)
                 .opacity(viewModel.buttonOpacity)
+
+                // バナー広告（最下部）
+                VStack {
+                    Spacer()
+                    BannerAdView(adUnitID: AdManager.bannerAdUnitID)
+                        .frame(height: 50)
+                }
             }
         }
         .ignoresSafeArea()
@@ -166,6 +174,22 @@ struct CarPreviewView: UIViewRepresentable {
         scnView.scene = scene
         scnView.pointOfView = cameraNode
     }
+}
+
+struct BannerAdView: UIViewRepresentable {
+    let adUnitID: String
+
+    func makeUIView(context: Context) -> BannerView {
+        let bannerView = BannerView(adSize: AdSizeBanner)
+        bannerView.adUnitID = adUnitID
+        bannerView.rootViewController = UIApplication.shared.connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .first?.windows.first?.rootViewController
+        bannerView.load(Request())
+        return bannerView
+    }
+
+    func updateUIView(_ uiView: BannerView, context: Context) {}
 }
 
 #Preview {
