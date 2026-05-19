@@ -12,6 +12,12 @@ import GoogleMobileAds
 struct TitleView: View {
     @State private var viewModel = TitleViewModel()
 
+    private var bottomSafeAreaInset: CGFloat {
+        UIApplication.shared.connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .first?.windows.first?.safeAreaInsets.bottom ?? 0
+    }
+
     var body: some View {
         GeometryReader { geo in
             ZStack(alignment: .top) {
@@ -97,13 +103,13 @@ struct TitleView: View {
                     )
                 }
                 // ボタン中心 = バナー上端 - 余白16 - ボタン半分28
-                .position(x: geo.size.width / 2, y: geo.size.height - geo.safeAreaInsets.bottom - 50 - 16 - 28)
+                .position(x: geo.size.width / 2, y: geo.size.height - bottomSafeAreaInset - 50 - 16 - 28)
                 .opacity(viewModel.buttonOpacity)
 
                 // バナー広告（Safe Area直上）
                 BannerAdView(adUnitID: AdManager.bannerAdUnitID)
                     .frame(height: 50)
-                    .position(x: geo.size.width / 2, y: geo.size.height - geo.safeAreaInsets.bottom - 25)
+                    .position(x: geo.size.width / 2, y: geo.size.height - bottomSafeAreaInset - 25)
                     .opacity(viewModel.buttonOpacity)
             }
         }
