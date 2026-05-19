@@ -191,6 +191,7 @@ struct BannerAdView: UIViewRepresentable {
         bannerView.rootViewController = UIApplication.shared.connectedScenes
             .compactMap { $0 as? UIWindowScene }
             .first?.windows.first?.rootViewController
+        bannerView.backgroundColor = .clear
         bannerView.load(Request())
         return bannerView
     }
