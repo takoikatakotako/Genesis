@@ -99,10 +99,10 @@ struct TitleView: View {
                 .position(x: geo.size.width / 2, y: geo.size.height * 0.88)
                 .opacity(viewModel.buttonOpacity)
 
-                // バナー広告（ドライブスタートボタンの下）
+                // バナー広告（Safe Area直上）
                 BannerAdView(adUnitID: AdManager.bannerAdUnitID)
                     .frame(height: 50)
-                    .position(x: geo.size.width / 2, y: geo.size.height * 0.88 + 56 / 2 + 16 + 25)
+                    .position(x: geo.size.width / 2, y: geo.size.height - geo.safeAreaInsets.bottom - 25)
                     .opacity(viewModel.buttonOpacity)
             }
         }
