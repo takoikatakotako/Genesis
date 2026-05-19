@@ -1,5 +1,4 @@
 import SwiftUI
-import GoogleMobileAds
 
 struct DriveView: View {
     @Environment(\.dismiss) private var dismiss
