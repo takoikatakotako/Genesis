@@ -25,7 +25,7 @@
     <key>NSCameraUsageDescription</key>
     <string>ARを使用して画像を認識し、3Dモデルを表示するためカメラが必要です。</string>
     <key>NSUserTrackingUsageDescription</key>
-    <string>より関連性の高い広告を表示するために使用されます。</string>
+    <string>広告ID（IDFA）を使用して、お客様の興味に合った広告を表示します。許可しない場合も広告は表示されますが、内容の最適化が行われません。</string>
     <key>UIApplicationSceneManifest</key>
     <dict>
         <key>UIApplicationSupportsMultipleScenes</key>

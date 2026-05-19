@@ -6,25 +6,22 @@
 //
 
 import SwiftUI
-import GoogleMobileAds
 import AppTrackingTransparency
 
 @main
 struct GenesisApp: App {
-    init() {
-        MobileAds.shared.start()
-    }
-
     var body: some Scene {
         WindowGroup {
             TitleView()
-                .onReceive(NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)) { _ in
-                    requestTrackingAuthorization()
+                .task {
+                    await requestTrackingAuthorizationIfNeeded()
+                    AdManager.shared.startIfNeeded()
                 }
         }
     }
 
-    private func requestTrackingAuthorization() {
-        ATTrackingManager.requestTrackingAuthorization { _ in }
+    private func requestTrackingAuthorizationIfNeeded() async {
+        guard ATTrackingManager.trackingAuthorizationStatus == .notDetermined else { return }
+        _ = await ATTrackingManager.requestTrackingAuthorization()
     }
 }
