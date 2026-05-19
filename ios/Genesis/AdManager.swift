@@ -6,7 +6,7 @@
 import GoogleMobileAds
 
 @MainActor
-class AdManager: NSObject, ObservableObject {
+class AdManager: NSObject {
     static let shared = AdManager()
 
     // テスト用ID。本番リリース時は実際の広告ユニットIDに差し替える
