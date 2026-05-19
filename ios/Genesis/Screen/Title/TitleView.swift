@@ -96,7 +96,8 @@ struct TitleView: View {
                             .fill(Color(red: 0.85, green: 0.45, blue: 0.5))
                     )
                 }
-                .position(x: geo.size.width / 2, y: geo.size.height * 0.88)
+                // ボタン中心 = バナー上端 - 余白16 - ボタン半分28
+                .position(x: geo.size.width / 2, y: geo.size.height - geo.safeAreaInsets.bottom - 50 - 16 - 28)
                 .opacity(viewModel.buttonOpacity)
 
                 // バナー広告（Safe Area直上）
