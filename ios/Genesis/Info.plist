@@ -21,7 +21,7 @@
     <key>AdMobBannerAdUnitID</key>
     <string>$(ADMOB_BANNER_AD_UNIT_ID)</string>
     <key>GADApplicationIdentifier</key>
-    <string>ca-app-pub-3940256099942544~1458002511</string>
+    <string>ca-app-pub-5587141252700968~8488480240</string>
     <key>ITSAppUsesNonExemptEncryption</key>
     <false/>
     <key>NSCameraUsageDescription</key>
