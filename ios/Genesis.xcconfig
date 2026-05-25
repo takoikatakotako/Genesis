@@ -1,0 +1,4 @@
+// AdMob 本番バナー広告ユニットID（title-banner）
+// App Store本番配信時のみ使用される。
+// Debug ビルド・TestFlight 配信時は AdManager.testBannerAdUnitID が使われる。
+ADMOB_BANNER_AD_UNIT_ID = ca-app-pub-5587141252700968/8895674353

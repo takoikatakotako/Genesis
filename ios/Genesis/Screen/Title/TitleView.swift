@@ -7,9 +7,16 @@
 
 import SwiftUI
 import SceneKit
+import GoogleMobileAds
 
 struct TitleView: View {
     @State private var viewModel = TitleViewModel()
+
+    private var bottomSafeAreaInset: CGFloat {
+        UIApplication.shared.connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .first?.windows.first?.safeAreaInsets.bottom ?? 0
+    }
 
     var body: some View {
         GeometryReader { geo in
@@ -95,8 +102,15 @@ struct TitleView: View {
                             .fill(Color(red: 0.85, green: 0.45, blue: 0.5))
                     )
                 }
-                .position(x: geo.size.width / 2, y: geo.size.height * 0.88)
+                // ボタン中心 = バナー上端 - 余白16 - ボタン半分28
+                .position(x: geo.size.width / 2, y: geo.size.height - bottomSafeAreaInset - 50 - 16 - 28)
                 .opacity(viewModel.buttonOpacity)
+
+                // バナー広告（Safe Area直上）
+                BannerAdView(adUnitID: AdManager.bannerAdUnitID)
+                    .frame(height: 50)
+                    .position(x: geo.size.width / 2, y: geo.size.height - bottomSafeAreaInset - 25)
+                    .opacity(viewModel.buttonOpacity)
             }
         }
         .ignoresSafeArea()
@@ -166,6 +180,23 @@ struct CarPreviewView: UIViewRepresentable {
         scnView.scene = scene
         scnView.pointOfView = cameraNode
     }
+}
+
+struct BannerAdView: UIViewRepresentable {
+    let adUnitID: String
+
+    func makeUIView(context: Context) -> BannerView {
+        let bannerView = BannerView(adSize: AdSizeBanner)
+        bannerView.adUnitID = adUnitID
+        bannerView.rootViewController = UIApplication.shared.connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .first?.windows.first?.rootViewController
+        bannerView.backgroundColor = .clear
+        bannerView.load(Request())
+        return bannerView
+    }
+
+    func updateUIView(_ uiView: BannerView, context: Context) {}
 }
 
 #Preview {
