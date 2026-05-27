@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="ja">
+   <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Architecture - AR Drive For Developers</title>
+      <link rel="stylesheet" href="style.css">
+   </head>
+   <body>
+      <div class="container">
+         <p class="breadcrumb"><a href="index.html">← For Developers</a></p>
+
+         <h1>Genesis アーキテクチャ</h1>
+
+         <h2>概要</h2>
+         <p>Swift / SwiftUI で実装した iOS アプリ。ARKit + RealityKit で拡張現実を実現し、MVVM パターンで画面ロジックを管理する。</p>
+
+         <h2>画面構成</h2>
+         <pre><code>GenesisApp
+└── TitleView（タイトル画面）
+    ├── DriveView（AR 操作画面）
+    │   ├── ARViewContainer（ARKit ラッパー）
+    │   ├── Joystick（操作スティック）
+    │   ├── SpeedMeter（速度メーター）
+    │   └── SteeringIndicator（ステアリング表示）
+    ├── CarSelectionView（車種選択画面）
+    └── SettingsView（設定画面）</code></pre>
+
+         <h2>ファイル構成</h2>
+         <pre><code>ios/Genesis/
+├── GenesisApp.swift              # アプリエントリーポイント
+├── AppSettings.swift             # 設定管理（シングルトン）
+├── CarModel.swift                # 車モデルの定義
+├── classicCar.usdz               # 3D モデル（Blender 製 USDC を usdzip で再パッケージ）
+├── Assets.xcassets/
+│   ├── AppIcon.appiconset/
+│   └── AR Resources.arresourcegroup/  # 画像認識用リファレンス画像
+└── Screen/
+    ├── Title/
+    │   ├── TitleView.swift
+    │   └── TitleViewModel.swift
+    ├── Drive/
+    │   ├── DriveView.swift
+    │   ├── DriveViewModel.swift
+    │   ├── ARViewContainer.swift  # UIViewRepresentable で ARView をラップ
+    │   ├── Joystick.swift
+    │   ├── SpeedMeter.swift
+    │   └── SteeringIndicator.swift
+    ├── CarSelection/
+    │   └── CarSelectionView.swift
+    └── Settings/
+        └── SettingsView.swift</code></pre>
+
+         <h2>アーキテクチャパターン</h2>
+         <p><strong>MVVM（Model - View - ViewModel）</strong></p>
+         <table>
+            <thead>
+               <tr><th>役割</th><th>クラス / ファイル</th></tr>
+            </thead>
+            <tbody>
+               <tr><td>Model</td><td><code>CarModel</code>, <code>AppSettings</code></td></tr>
+               <tr><td>View</td><td><code>*View.swift</code>, <code>ARViewContainer.swift</code></td></tr>
+               <tr><td>ViewModel</td><td><code>TitleViewModel</code>, <code>DriveViewModel</code></td></tr>
+            </tbody>
+         </table>
+         <ul>
+            <li>ViewModel は <code>@Observable</code> マクロを使用（Swift 5.9 以降）</li>
+            <li><code>AppSettings</code> は <code>ObservableObject</code> のシングルトンで設定を全体に共有</li>
+         </ul>
+
+         <h2>主要コンポーネント</h2>
+
+         <h3>AppSettings</h3>
+         <ul>
+            <li><code>UserDefaults</code> で設定値を永続化</li>
+            <li>ステアリング感度・最大速度・加速度・選択車種を管理</li>
+            <li>シングルトン（<code>AppSettings.shared</code>）</li>
+         </ul>
+
+         <h3>CarModel</h3>
+         <ul>
+            <li>選択可能な車種を定義する値型（struct）</li>
+            <li>現在実装済みモデル: クラシックカー（<code>classicCar.usdz</code>）</li>
+            <li>スポーツカー・SUV・トラックはデータのみ定義（モデルファイル未実装）</li>
+         </ul>
+
+         <h3>ARViewContainer</h3>
+         <ul>
+            <li><code>UIViewRepresentable</code> で <code>ARView</code>（RealityKit）を SwiftUI にブリッジ</li>
+            <li><code>ARWorldTrackingConfiguration</code> で水平面を検出</li>
+            <li>モデルの向き補正: X 軸 -90°（座標系変換）+ Y 軸 180°（モデル固有）</li>
+            <li>移動方向の計算で <code>-sin(rotation)</code> を使用（モデルの前後に合わせた補正）</li>
+         </ul>
+
+         <h3>Joystick</h3>
+         <ul>
+            <li>画面上の仮想スティック UI</li>
+            <li>X 軸でステアリング、Y 軸で前進 / 後退を制御</li>
+         </ul>
+
+         <h2>技術スタック</h2>
+         <table>
+            <thead>
+               <tr><th>項目</th><th>内容</th></tr>
+            </thead>
+            <tbody>
+               <tr><td>言語</td><td>Swift 5.9+</td></tr>
+               <tr><td>UI フレームワーク</td><td>SwiftUI</td></tr>
+               <tr><td>AR フレームワーク</td><td>ARKit + RealityKit</td></tr>
+               <tr><td>3D モデル形式</td><td>USDZ</td></tr>
+               <tr><td>設定永続化</td><td>UserDefaults</td></tr>
+               <tr><td>最小サポート OS</td><td>iOS 26.2（ARKit 必須のため実機のみ）</td></tr>
+               <tr><td>ビルド</td><td>Xcode（<code>ios/Genesis.xcodeproj</code>）</td></tr>
+            </tbody>
+         </table>
+      </div>
+   </body>
+</html>
